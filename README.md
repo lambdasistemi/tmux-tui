@@ -65,10 +65,11 @@ brew install tmux-tui
 
 Grab a single-file artifact from the
 [releases page](https://github.com/lambdasistemi/tmux-tui/releases/latest)
-(AppImage / DEB / RPM / static-musl tarball, x86_64 and aarch64):
+(AppImage / DEB / RPM / static-musl tarball, x86_64 and aarch64). Asset names
+carry the version, e.g. for v0.1.0 on x86_64:
 
 ```sh
-curl -L https://github.com/lambdasistemi/tmux-tui/releases/latest/download/tmux-tui-x86_64-linux.AppImage -o tmux-tui
+curl -L https://github.com/lambdasistemi/tmux-tui/releases/download/v0.1.0/tmux-tui-0.1.0-x86_64-linux.AppImage -o tmux-tui
 chmod +x ./tmux-tui
 ```
 
