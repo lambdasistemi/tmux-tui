@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Print the crate version from Cargo.toml (the release artifact base version).
+set -euo pipefail
+grep -m1 '^version[[:space:]]*=' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/'

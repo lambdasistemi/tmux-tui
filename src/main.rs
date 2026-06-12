@@ -1,4 +1,4 @@
-//! tdrag — a mouse-driven drag-and-drop layout manager for tmux.
+//! tmux-tui — a mouse-driven drag-and-drop layout manager for tmux.
 //!
 //! Two views, toggled with Tab (or the `[ windows ]` / `[ panes ]` button):
 //!
@@ -132,7 +132,7 @@ fn run(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> io::Result<()> {
 
 fn main() -> io::Result<()> {
     if std::env::var_os("TMUX").is_none() {
-        eprintln!("tdrag: not inside a tmux session ($TMUX unset). Run it from tmux.");
+        eprintln!("tmux-tui: not inside a tmux session ($TMUX unset). Run it from tmux.");
         std::process::exit(1);
     }
 
