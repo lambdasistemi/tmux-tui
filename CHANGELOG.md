@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0 (2026-06-12)
+
+
+### Features
+
+* mouse-driven tmux pane and window layout manager ([c6a79c0](https://github.com/lambdasistemi/tmux-tui/commit/c6a79c0dfd40b5b75ccabd9dbe2a9a0311723408))
+
 ## 0.1.0
 
 Initial release.
