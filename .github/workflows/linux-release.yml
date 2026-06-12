@@ -1,0 +1,97 @@
+name: Linux Release
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/linux-release.yml"
+      - "flake.nix"
+      - "flake.lock"
+      - "nix/**"
+      - "rust-toolchain.toml"
+      - "scripts/release/**"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Release mode"
+        type: choice
+        options: [release, dev-linux]
+        default: release
+      tag:
+        description: "Existing release tag, e.g. v0.1.0"
+        required: false
+        type: string
+      publish:
+        description: "Upload assets when mode=release"
+        type: choice
+        options: ["no", "yes"]
+        default: "no"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: linux-release-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name || inputs.tag || inputs.mode }}
+  # Self-cancel superseded PR runs; never cancel a tag-release run.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  linux-bundles:
+    name: Build Linux tmux-tui (${{ matrix.arch.id }})
+    runs-on: ${{ matrix.arch.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - id: x86_64
+            runner: nixos
+          - id: aarch64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag || github.ref }}
+
+      - if: matrix.arch.runner == 'nixos'
+        uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - if: matrix.arch.runner != 'nixos'
+        uses: paolino/dev-assets/setup-nix@v0.1.0
+        with:
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - uses: paolino/dev-assets/linux-release@v0.1.0
+        with:
+          mode: >-
+            ${{
+              github.event_name == 'pull_request' && 'dev-linux'
+              || inputs.mode
+              || 'release'
+            }}
+          tag: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+          publish: >-
+            ${{
+              github.event_name == 'push' && 'yes'
+              || inputs.publish
+              || 'no'
+            }}
+          release-output: tmux-tui-linux-release-artifacts
+          dev-output: tmux-tui-linux-dev-release-artifacts
+          executable-name: tmux-tui
+          usage-grep: "not inside a tmux session"
+          dev-tag: dev-linux
+          release-version-command: scripts/release/version
+          release-check-command: 'scripts/release/check-version-consistency "$TAG"'
+          release-notes-command: 'scripts/release/extract-notes "$TAG"'
+          release-title: tmux-tui ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+          dev-release-title: tmux-tui dev Linux bundles
+          github-token: ${{ github.token }}

@@ -54,13 +54,34 @@ bind-key -n C-MouseDown3Pane display-popup -E -w 30% -h 30% tmux-tui
 bind-key g                   display-popup -E -w 30% -h 30% tmux-tui
 ```
 
-Build the binary with Nix (the flake provides the toolchain):
+### macOS (Homebrew)
+
+```sh
+brew tap lambdasistemi/tap
+brew install tmux-tui
+```
+
+### Linux
+
+Grab a single-file artifact from the
+[releases page](https://github.com/lambdasistemi/tmux-tui/releases/latest)
+(AppImage / DEB / RPM / static-musl tarball, x86_64 and aarch64):
+
+```sh
+curl -L https://github.com/lambdasistemi/tmux-tui/releases/latest/download/tmux-tui-x86_64-linux.AppImage -o tmux-tui
+chmod +x ./tmux-tui
+```
+
+### From source (Nix)
 
 ```sh
 nix build github:lambdasistemi/tmux-tui     # ./result/bin/tmux-tui
 # or, from a clone:
 nix develop -c cargo build --release        # ./target/release/tmux-tui
 ```
+
+> Windows isn't a target: tmux is POSIX-only and doesn't run on native Windows.
+> Under WSL, use the Linux build.
 
 ## Development
 

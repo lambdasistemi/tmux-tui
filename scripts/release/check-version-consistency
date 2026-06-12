@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Verify the release tag (v<x.y.z>) matches the Cargo.toml version.
+set -euo pipefail
+tag="${1:?usage: check-version-consistency <tag>}"
+want="${tag#v}"
+have="$(grep -m1 '^version[[:space:]]*=' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')"
+if [ "$want" != "$have" ]; then
+  echo "tag $tag does not match Cargo.toml version $have" >&2
+  exit 1
+fi
+echo "version $have matches tag $tag"

@@ -1,0 +1,135 @@
+name: Darwin Release
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/darwin-release.yml"
+      - "flake.nix"
+      - "flake.lock"
+      - "nix/**"
+      - "rust-toolchain.toml"
+      - "scripts/release/**"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Release mode"
+        type: choice
+        options: [release, dev-homebrew]
+        default: release
+      tag:
+        description: "Existing tag, e.g. v0.1.0"
+        required: false
+        type: string
+      publish:
+        description: "Release mode only: upload to the release and update the tap"
+        type: choice
+        options: ["no", "yes"]
+        default: "no"
+      update_tap:
+        description: "Dev mode only: update lambdasistemi/homebrew-tap"
+        type: choice
+        options: ["yes", "no"]
+        default: "yes"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: >-
+    darwin-release-${{
+      github.ref_type == 'tag' && github.ref_name || inputs.tag || github.ref
+    }}-${{ inputs.mode || github.event_name }}
+  # Self-cancel superseded PR runs (scarce macOS runners pile up otherwise);
+  # never cancel a tag-release run.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-and-release:
+    name: Build ${{ matrix.arch }} tmux-tui artifacts
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Apple Silicon only: every Mac since 2020 is aarch64, and the
+        # GitHub-hosted Intel `macos-13` runners are scarce and queue
+        # indefinitely, stalling the release pipeline.
+        include:
+          - arch: aarch64-darwin
+            runner: macos-14
+    env:
+      TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+      MODE: >-
+        ${{
+          github.event_name == 'pull_request' && 'dev-homebrew'
+          || inputs.mode
+          || 'release'
+        }}
+      PUBLISH: >-
+        ${{
+          github.event_name == 'push'
+          || (inputs.mode != 'dev-homebrew' && inputs.publish == 'yes')
+        }}
+      UPDATE_TAP: ${{ inputs.update_tap || 'yes' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag || github.ref }}
+
+      - uses: cachix/install-nix-action@v30
+        with:
+          extra_nix_config: |
+            extra-substituters = https://paolino.cachix.org
+            extra-trusted-public-keys = paolino.cachix.org-1:ecmgO3CXdgSWA2cHlm4srknd/cLFMLmK3i3NrzeDFaE=
+
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Build, smoke-test, and optionally publish Darwin Homebrew artifacts
+        uses: paolino/dev-assets/darwin-homebrew-release@v0.1.0
+        with:
+          mode: ${{ env.MODE }}
+          tag: ${{ env.TAG }}
+          publish: ${{ env.PUBLISH }}
+          update-tap: ${{ env.UPDATE_TAP }}
+          dev-tag: dev-homebrew
+          release-package: tmux-tui-darwin-release-artifacts
+          dev-package: tmux-tui-darwin-dev-homebrew-artifacts
+          release-formula: tmux-tui.rb
+          dev-formula: tmux-tui-dev.rb
+          release-artifact-name: darwin-release-bundle-${{ matrix.arch }}
+          dev-artifact-name: darwin-dev-homebrew-artifacts-${{ matrix.arch }}
+          tarball-pattern: tmux-tui-*-${{ matrix.arch }}.tar.gz
+          installed-commands: tmux-tui
+          cleanup-formulae: tmux-tui tmux-tui-dev
+          tap-name: lambdasistemi/tap
+          tap-repository: lambdasistemi/homebrew-tap
+          github-token: ${{ github.token }}
+          tap-token: ${{ secrets.TAP_TOKEN }}
+          release-check-command: 'scripts/release/check-version-consistency "$TAG"'
+          release-notes-command: 'scripts/release/extract-notes "$TAG"'
+          release-title: tmux-tui ${{ env.TAG }}
+          dev-release-title: tmux-tui dev Homebrew
+          tarball-smoke-script: |
+            if tmux-tui >/tmp/exe.out 2>&1; then
+              cat /tmp/exe.out
+              exit 1
+            fi
+            cat /tmp/exe.out
+            grep -F -- "not inside a tmux session" /tmp/exe.out >/dev/null
+          brew-smoke-script: |
+            if tmux-tui >/tmp/exe.out 2>&1; then
+              cat /tmp/exe.out
+              exit 1
+            fi
+            cat /tmp/exe.out
+            grep -F -- "not inside a tmux session" /tmp/exe.out >/dev/null
+            otool -L "$(which tmux-tui)"

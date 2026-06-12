@@ -22,7 +22,21 @@ let
   };
 
   cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+
+  # Statically-linked musl build (Linux only). tmux-tui is pure Rust (ratatui +
+  # crossterm, no C deps), so the musl target links a fully static binary with
+  # no C cross-toolchain. Evaluated lazily; only forced on Linux.
+  muslTarget =
+    if pkgs.stdenv.hostPlatform.isAarch64
+    then "aarch64-unknown-linux-musl"
+    else "x86_64-unknown-linux-musl";
+  muslArgs = commonArgs // {
+    CARGO_BUILD_TARGET = muslTarget;
+    CARGO_BUILD_RUSTFLAGS = "-C target-feature=+crt-static";
+    doCheck = false;
+  };
+  cargoArtifactsMusl = craneLib.buildDepsOnly muslArgs;
 in
 {
-  inherit craneLib commonArgs cargoArtifacts;
+  inherit craneLib commonArgs cargoArtifacts muslArgs cargoArtifactsMusl;
 }
