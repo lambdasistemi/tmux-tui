@@ -75,7 +75,6 @@ jobs:
           github.event_name == 'push'
           || (inputs.mode != 'dev-homebrew' && inputs.publish == 'yes')
         }}
-      UPDATE_TAP: ${{ inputs.update_tap || 'yes' }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -93,13 +92,26 @@ jobs:
           name: paolino
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
+      - name: Decide Homebrew tap update
+        id: tap
+        env:
+          TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+          UPDATE_TAP: ${{ inputs.update_tap || 'yes' }}
+        run: |
+          if [ -n "$TAP_TOKEN" ]; then
+            echo "update-tap=$UPDATE_TAP" >> "$GITHUB_OUTPUT"
+          else
+            echo "update-tap=no" >> "$GITHUB_OUTPUT"
+            echo "::warning::TAP_TOKEN is not set; skipping Homebrew tap update (binaries still publish). Set the TAP_TOKEN secret to update lambdasistemi/homebrew-tap."
+          fi
+
       - name: Build, smoke-test, and optionally publish Darwin Homebrew artifacts
         uses: paolino/dev-assets/darwin-homebrew-release@v0.1.0
         with:
           mode: ${{ env.MODE }}
           tag: ${{ env.TAG }}
           publish: ${{ env.PUBLISH }}
-          update-tap: ${{ env.UPDATE_TAP }}
+          update-tap: ${{ steps.tap.outputs.update-tap }}
           dev-tag: dev-homebrew
           release-package: tmux-tui-darwin-release-artifacts
           dev-package: tmux-tui-darwin-dev-homebrew-artifacts
