@@ -4,8 +4,19 @@
 set -euo pipefail
 tag="${1:?usage: extract-notes <tag>}"
 ver="${tag#v}"
-awk -v v="$ver" '
-  index($0, "## ") == 1 && index($0, v) > 0 { grab = 1; next }
-  grab && index($0, "## ") == 1 { exit }
-  grab { print }
-' CHANGELOG.md
+grab=0
+
+while IFS= read -r line || [[ -n "$line" ]]; do
+  if [[ "$line" == "## "* ]]; then
+    if [[ "$line" == *"$ver"* ]]; then
+      grab=1
+    elif ((grab)); then
+      break
+    fi
+    continue
+  fi
+
+  if ((grab)); then
+    printf '%s\n' "$line"
+  fi
+done < CHANGELOG.md
