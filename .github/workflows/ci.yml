@@ -16,5 +16,81 @@ jobs:
     runs-on: nixos
     steps:
       - uses: actions/checkout@v6
-      - name: Stub CI
-        run: echo "CI stub — replaced by the initial implementation PR"
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Warm the Nix store
+        run: >-
+          nix build --quiet
+          .#cli
+          .#checks.x86_64-linux.clippy
+          .#checks.x86_64-linux.nextest
+          .#checks.x86_64-linux.fmt
+          .#checks.x86_64-linux.deny
+          .#checks.x86_64-linux.doc
+
+  test:
+    name: test
+    needs: build-gate
+    runs-on: nixos
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Unit tests (cargo-nextest)
+        run: nix build --quiet .#checks.x86_64-linux.nextest
+
+  clippy:
+    name: clippy
+    needs: build-gate
+    runs-on: nixos
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Clippy (-D warnings)
+        run: nix build --quiet .#checks.x86_64-linux.clippy
+
+  fmt-check:
+    name: fmt-check
+    needs: build-gate
+    runs-on: nixos
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: rustfmt check
+        run: nix build --quiet .#checks.x86_64-linux.fmt
+
+  doc:
+    name: doc
+    needs: build-gate
+    runs-on: nixos
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: rustdoc (-D warnings)
+        run: nix build --quiet .#checks.x86_64-linux.doc
+
+  deny:
+    name: deny
+    needs: build-gate
+    runs-on: nixos
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: cargo-deny
+        run: nix build --quiet .#checks.x86_64-linux.deny

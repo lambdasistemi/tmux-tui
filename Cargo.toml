@@ -1,0 +1,26 @@
+[package]
+name = "tmux-tui"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Mouse-driven drag-and-drop layout manager for tmux"
+repository = "https://github.com/lambdasistemi/tmux-tui"
+readme = "README.md"
+keywords = ["tmux", "tui", "ratatui", "terminal", "layout"]
+categories = ["command-line-utilities"]
+rust-version = "1.85"
+
+[dependencies]
+ratatui = "0.29"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+
+# A TUI must restore the terminal on the way out, so the release build keeps
+# unwinding (no `panic = "abort"`): main() runs the teardown after run().
+[profile.release]
+opt-level = 2
+strip = true

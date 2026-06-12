@@ -1,0 +1,32 @@
+# cargo-deny configuration. https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-apple-darwin",
+]
+all-features = true
+
+[advisories]
+yanked = "deny"
+
+[licenses]
+# The licenses encountered across the ratatui + crossterm dependency
+# tree. Permissive only. Widen here if cargo-deny reports a new one.
+allow = [
+    "Apache-2.0",
+    "MIT",
+    "Unicode-3.0",
+    "Zlib",
+]
+confidence-threshold = 0.93
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

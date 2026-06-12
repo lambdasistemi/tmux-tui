@@ -1,0 +1,1 @@
+/code/tmux-tui-issue-1/target/release/tmux-tui: /code/tmux-tui-issue-1/src/app.rs /code/tmux-tui-issue-1/src/geometry.rs /code/tmux-tui-issue-1/src/main.rs /code/tmux-tui-issue-1/src/menu.rs /code/tmux-tui-issue-1/src/tmux.rs /code/tmux-tui-issue-1/src/ui.rs
