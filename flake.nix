@@ -131,5 +131,15 @@
           ];
         };
       }
-    );
+    )
+    // {
+      # System-agnostic outputs (modules + overlay) live outside
+      # eachDefaultSystem; they reference the per-system package lazily.
+      overlays.default = final: _prev: {
+        tmux-tui = self.packages.${final.system}.default;
+      };
+
+      homeManagerModules.default = import ./nix/hm-module.nix { inherit self; };
+      nixosModules.default = import ./nix/nixos-module.nix { inherit self; };
+    };
 }

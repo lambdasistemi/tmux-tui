@@ -81,6 +81,36 @@ nix build github:lambdasistemi/tmux-tui     # ./result/bin/tmux-tui
 nix develop -c cargo build --release        # ./target/release/tmux-tui
 ```
 
+### NixOS / Home Manager (flake)
+
+The flake exposes a `default` package, an overlay, and modules. Add it as an
+input:
+
+```nix
+inputs.tmux-tui.url = "github:lambdasistemi/tmux-tui";
+```
+
+**Home Manager** — installs the binary and (opt-in) wires the popup keybindings
+into your tmux config:
+
+```nix
+imports = [ inputs.tmux-tui.homeManagerModules.default ];
+
+programs.tmux-tui = {
+  enable = true;
+  keybindings = true;   # off by default; needs programs.tmux.enable = true
+  # bindKey = "g"; mouse = true; size = "30%";   # defaults
+};
+```
+
+**NixOS** — system-wide binary only (tmux config is per-user, so wire keybindings
+with Home Manager above or your own `programs.tmux.extraConfig`):
+
+```nix
+imports = [ inputs.tmux-tui.nixosModules.default ];
+programs.tmux-tui.enable = true;
+```
+
 > Windows isn't a target: tmux is POSIX-only and doesn't run on native Windows.
 > Under WSL, use the Linux build.
 
