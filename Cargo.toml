@@ -1,6 +1,6 @@
 [package]
 name = "tmux-tui"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "Apache-2.0"
 description = "Mouse-driven drag-and-drop layout manager for tmux"
